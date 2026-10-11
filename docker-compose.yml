@@ -21,13 +21,15 @@ services:
 
       # Chroma
       - CHROMA_PERSIST_DIR=.chroma
+      - ANONYMIZED_TELEMETRY=False
 
       # Gemini API (REQUIRED - thay bằng API key của bạn)
       - GEMINI_API_KEY=${GEMINI_API_KEY:-your-gemini-api-key-here}
       - GEMINI_MODEL_NAME=gemini-2.5-flash
 
       # Ollama chạy trên máy host (ngoài Docker) - cần `ollama pull` các model này trước
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # Linux: Ollama phải lắng nghe 0.0.0.0 (OLLAMA_HOST=0.0.0.0), vì mặc định chỉ nghe 127.0.0.1
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_EMBED_MODEL=bge-m3
       - OLLAMA_QG_MODEL=qwen2.5:3b
       - OLLAMA_CHAT_MODEL=qwen2.5:7b

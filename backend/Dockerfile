@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
-COPY requirements.txt .
+COPY requirements.txt constraints.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # Copy application code into ask_forge/backend so the `ask_forge.backend.app...` imports resolve
 COPY . ./ask_forge/backend/

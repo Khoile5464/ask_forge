@@ -69,7 +69,7 @@
 
 - **Streaming Responses**: Real-time token-by-token response generation using SSE
 - **Background Job Processing**: Async question generation with AsyncIO queue
-- **Multi-Model Support**: Seamless switching between Gemini and local HuggingFace models
+- **Multi-Model Support**: Choose Gemini (cloud) or Ollama (local) for chat; Ollama handles embeddings and question generation
 - **LLM Router**: Intelligent routing based on task type and requirements
 - **Persistent Storage**: Vector embeddings stored in ChromaDB with metadata
 - **Conversation Memory**: Context-aware chat with sliding window memory
@@ -86,7 +86,7 @@ FastAPI          → High-performance async web framework
 Python 3.11+     → Modern Python with type hints
 ChromaDB         → Vector database for embeddings
 Gemini API       → Google's generative AI for chat
-HuggingFace      → Custom fine-tuned question generation models
+Ollama           → Local models for embeddings, question generation and optional chat
 LangChain        → LLM orchestration and RAG pipelines
 Pydantic         → Data validation and settings management
 Prometheus       → Metrics and monitoring
@@ -131,8 +131,8 @@ Uvicorn          → ASGI server
         │                    ┌───────┴────────┐                  │
         │                    ▼                ▼                   │
         │            ┌──────────────┐  ┌─────────────┐          │
-        │            │ Gemini API   │  │ HuggingFace │          │
-        │            │   (Chat)     │  │  (Q-Gen)    │          │
+        │            │ Gemini API   │  │   Ollama    │          │
+        │            │   (Chat)     │  │(Q-Gen, Emb) │          │
         │            └──────────────┘  └─────────────┘          │
         └───────────────────────────────────────────────────────┘
 ```
@@ -204,66 +204,84 @@ frontend/
 
 ### Prerequisites
 
-- **Python 3.11+** - [Download](https://www.python.org/downloads/)
-- **Node.js 20+** - [Download](https://nodejs.org/)
-- **pnpm** - `npm install -g pnpm`
-- **Docker & Docker Compose** (optional) - [Download](https://www.docker.com/)
-- **Gemini API Key** - [Get one here](https://makersuite.google.com/app/apikey)
+- **Docker Desktop** (Windows/macOS) or **Docker Engine + Compose v2** (Linux) - [Download](https://www.docker.com/)
+- **Ollama** - [Download](https://ollama.com/download), running on the same machine
+- **Gemini API Key** (for the default chat model) - [Get one here](https://aistudio.google.com/apikey)
+- ~4 GB free disk for the Docker images and ~8 GB for the Ollama models
 
 ### Option 1: Docker Compose (Recommended)
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/askforge.git
-cd askforge
+git clone https://github.com/Khoile5464/ask_forge.git
+cd ask_forge
 ```
 
-2. **Set up environment variables**
+2. **Pull the Ollama models**
 ```bash
-# Create .env file in backend/app/core/
-echo "GEMINI_API_KEY=your_actual_api_key_here" > backend/app/core/.env
+ollama pull bge-m3        # embeddings (multilingual, good for Vietnamese)
+ollama pull qwen2.5:3b    # follow-up question generation
+ollama pull qwen2.5:7b    # optional: local chat model ("Ollama" in the top bar)
 ```
 
-3. **Start the application**
+> **Linux only:** Ollama listens on `127.0.0.1` by default, which containers cannot reach.
+> Make it listen on all interfaces: `sudo systemctl edit ollama` → add
+> `[Service]` / `Environment="OLLAMA_HOST=0.0.0.0"`, then `sudo systemctl restart ollama`.
+> Windows and macOS need no change.
+
+3. **Set up environment variables**
 ```bash
-docker-compose up --build
+cp .env.example .env
+# then put your key in .env: GEMINI_API_KEY=...
 ```
 
-4. **Access the application**
+4. **Start the application**
+```bash
+docker compose up --build
+```
+
+5. **Access the application**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
+> The frontend calls the backend at `http://localhost:8000`, so open the app in a browser
+> on the machine running Docker. To use it from another device, change `NEXT_PUBLIC_API_BASE`
+> (both places in `docker-compose.yml`) to that machine's IP and rebuild.
+
 ### Option 2: Local Development
+
+The backend imports itself as the `ask_forge` package, so the repository folder **must be named
+`ask_forge`** and the server is started from its **parent** folder.
 
 #### Backend Setup
 ```bash
-cd backend
+cd ask_forge/backend
 
-# Create virtual environment
+# Create virtual environment (Python 3.11)
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (constraints.txt pins the tested versions)
+pip install -r requirements.txt -c constraints.txt
 
 # Set up environment
 cat > app/core/.env << EOL
 GEMINI_API_KEY=your_actual_api_key_here
-GEMINI_MODEL_NAME=gemini-2.0-flash-exp
-HF_PRELOAD_AT_STARTUP=True
-HF_QUESTION_GENERATOR_CKPT=Qwen/qwen-security-final-question-reformatted
+OLLAMA_BASE_URL=http://localhost:11434
 EOL
 
-# Run the server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Run the server from the folder that contains ask_forge/
+cd ../..
+uvicorn ask_forge.backend.app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 #### Frontend Setup
 ```bash
-cd frontend
+cd ask_forge/frontend
 
-# Install dependencies
+# Install dependencies (pnpm version is pinned in package.json)
+corepack enable
 pnpm install
 
 # Set up environment
@@ -316,7 +334,8 @@ Content-Type: application/json
   "index_name": "biology_notes",
   "lang": "english",
   "n_results": 5,
-  "min_rel": 0.2
+  "min_rel": 0.2,
+  "provider": "gemini"
 }
 
 Response: text/event-stream
@@ -346,7 +365,8 @@ Response: {
 
 ### Backend Configuration
 
-Edit `backend/app/core/.env`:
+With Docker, settings live in `docker-compose.yml` (secrets in the root `.env`).
+For local development, put them in `backend/app/core/.env`:
 ```bash
 # Core Settings
 DEBUG=False
@@ -361,18 +381,15 @@ MIN_CHARS=300            # Minimum chunk size
 PAGES_JSON_DIR=data/user_db
 CHROMA_PERSIST_DIR=.chroma
 
-# Embeddings
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-# Gemini API
+# Gemini API (default chat model)
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL_NAME=gemini-2.0-flash-exp
+GEMINI_MODEL_NAME=gemini-2.5-flash
 
-# HuggingFace Models
-HF_QUESTION_GENERATOR_CKPT=Qwen/qwen-security-final-question-reformatted
-HF_PRELOAD_AT_STARTUP=True
-HF_DEVICE_MAP=auto
-HF_DTYPE=bfloat16
+# Ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_EMBED_MODEL=bge-m3       # changing this requires rebuilding existing indexes
+OLLAMA_QG_MODEL=qwen2.5:3b
+OLLAMA_CHAT_MODEL=qwen2.5:7b
 
 # Queue (if using Redis)
 REDIS_URL=redis://localhost:6379
@@ -391,8 +408,8 @@ NEXT_PUBLIC_API_BASE=http://localhost:8000
 
 ### Backend Development
 ```bash
-# Run with auto-reload
-uvicorn app.main:app --reload
+# Run with auto-reload (from the folder that contains ask_forge/)
+uvicorn ask_forge.backend.app.main:app --reload
 
 # Run tests
 pytest

@@ -18,3 +18,8 @@ htmlcov/
 *.md
 .DS_Store
 node_modules/
+# Secrets & runtime data (mounted as volumes, never baked into the image)
+.env
+*.env
+.chroma/
+data/
