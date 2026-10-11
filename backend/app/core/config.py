@@ -26,21 +26,16 @@ class Settings(BaseSettings):
 
     # Chroma
     CHROMA_PERSIST_DIR: str = ".chroma"
-    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Gemini (đặt required hoặc có default tuỳ bạn)
     GEMINI_API_KEY: str = Field(min_length=1)  # thiếu sẽ raise
     GEMINI_MODEL_NAME: str = Field(default="gemini-2.5-flash")
 
-    # HF
-    HF_QUESTION_GENERATOR_CKPT: str = Field(default="Qwen/qwen-security-final-question-reformatted")
-    HF_LOCAL_ONLY: bool = Field(default=False)
-    HF_DEVICE_MAP: str = Field(default="auto")
-
-    HF_DTYPE: str = Field(default="")
-    HF_LOW_CPU_MEM: bool = Field(default=True)
-    HF_TRUST_REMOTE_CODE: bool = Field(default=False)
-    HF_PRELOAD_AT_STARTUP: bool = Field(default=True)
+    # Ollama (embedding, question generation, optional chat)
+    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434")
+    OLLAMA_EMBED_MODEL: str = Field(default="bge-m3")
+    OLLAMA_QG_MODEL: str = Field(default="qwen2.5:3b")
+    OLLAMA_CHAT_MODEL: str = Field(default="qwen2.5:7b")
 
     REDIS_URL: str = Field(default="redis://localhost:6379")
     # >>> Pydantic v2 config

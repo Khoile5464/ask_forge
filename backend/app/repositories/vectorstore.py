@@ -3,14 +3,15 @@ Updated ChromaRepo với query methods cho chat.
 """
 from typing import List, Dict, Any, Optional
 from chromadb import PersistentClient
-from chromadb.utils import embedding_functions
 from ask_forge.backend.app.core.config import settings
+from ask_forge.backend.app.repositories.embeddings import OllamaEmbeddingFunction
 
 class ChromaRepo:
     def __init__(self):
         self.client = PersistentClient(path=settings.CHROMA_PERSIST_DIR)
-        self.embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=settings.EMBEDDING_MODEL,
+        self.embedder = OllamaEmbeddingFunction(
+            model=settings.OLLAMA_EMBED_MODEL,
+            host=settings.OLLAMA_BASE_URL,
         )
         self._collections: dict[str, Any] = {}
 

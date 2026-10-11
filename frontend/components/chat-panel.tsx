@@ -21,6 +21,7 @@ export function ChatPanel() {
   const {
     language,
     indexName,
+    chatProvider,
     messages,
     addMessage,
     saveChatHistory,
@@ -106,7 +107,7 @@ export function ChatPanel() {
 
       let fullContent = ""
 
-      await chatStreamAPI(userMessage, indexName!, {
+      await chatStreamAPI(userMessage, indexName!, chatProvider, {
         onToken: (token) => {
           fullContent += token
           setStreamingContent((prev) => prev + token)

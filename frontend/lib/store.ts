@@ -11,6 +11,8 @@ export interface Message {
 
 export type IndexStatus = "idle" | "building" | "ready" | "error"
 
+export type ChatProvider = "gemini" | "ollama"
+
 interface AppState {
   // Language & Theme
   language: Language
@@ -44,6 +46,10 @@ interface AppState {
   clearMessages: () => void
   saveChatHistory: boolean
   setSaveChatHistory: (save: boolean) => void
+
+  // LLM trả lời chat
+  chatProvider: ChatProvider
+  setChatProvider: (provider: ChatProvider) => void
 
   // Model Thoughts
   modelThoughts: string
@@ -96,6 +102,10 @@ export const useStore = create<AppState>()(
       saveChatHistory: false,
       setSaveChatHistory: (save) => set({ saveChatHistory: save }),
 
+      // LLM trả lời chat
+      chatProvider: "gemini",
+      setChatProvider: (provider) => set({ chatProvider: provider }),
+
       // Model Thoughts
       modelThoughts: "",
       setModelThoughts: (thoughts) => set({ modelThoughts: thoughts }),
@@ -110,6 +120,7 @@ export const useStore = create<AppState>()(
         saveChatHistory: state.saveChatHistory,
         leftOpen: state.leftOpen,
         rightOpen: state.rightOpen,
+        chatProvider: state.chatProvider,
       }),
     },
   ),

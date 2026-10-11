@@ -15,8 +15,9 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy application code into ask_forge/backend so the `ask_forge.backend.app...` imports resolve
+COPY . ./ask_forge/backend/
+RUN touch ask_forge/__init__.py
 
 # Create necessary directories
 RUN mkdir -p data/user_db .chroma

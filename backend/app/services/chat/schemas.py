@@ -36,6 +36,7 @@ class ChatBody(BaseModel):
     lang: str = Field(default="vietnamese", description="Ngôn ngữ đầu ra (vietnamese/english)")
     n_results: int = Field(default=75)
     min_rel: float = Field(default=0.2)
+    provider: Literal["gemini", "ollama"] = Field(default="gemini", description="LLM trả lời chat")
     # TODO: Xử lý lang theo origin_language của query
 
 class ContextChunk(BaseModel):

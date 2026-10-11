@@ -78,7 +78,8 @@ class ChatService:
                 async for chunk in stream_answer_llm(
                         prompt=prompt,
                         app_state=self.app_state,
-                        task="chat"
+                        task="chat",
+                        provider=body.provider,
                 ):
                     if chunk:  # Skip empty chunks
                         yield _sse({

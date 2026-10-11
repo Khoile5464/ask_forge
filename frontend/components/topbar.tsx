@@ -1,14 +1,20 @@
 "use client"
 
-import { Moon, Sun, Languages, Sparkles } from "lucide-react"
+import { Moon, Sun, Languages, Sparkles, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useStore } from "@/lib/store"
 import { getTranslation } from "@/lib/translations"
 import { MobileSidebar }  from "@/components/mobile-sidebar"
 
 export function Topbar() {
-  const { language, isDarkMode, setLanguage, toggleDarkMode } = useStore()
+  const { language, isDarkMode, setLanguage, toggleDarkMode, chatProvider, setChatProvider } = useStore()
   const t = (key: Parameters<typeof getTranslation>[1]) => getTranslation(language, key)
 
   return (
@@ -24,6 +30,25 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1.5">
+                <Bot className="h-5 w-5" />
+                <span className="hidden sm:inline">{chatProvider === "gemini" ? "Gemini" : "Ollama"}</span>
+                <span className="sr-only">{t("chatModel")}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t("chatModel")}</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setChatProvider("gemini")}>
+                Gemini (cloud) {chatProvider === "gemini" && "✓"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setChatProvider("ollama")}>
+                Ollama (local) {chatProvider === "ollama" && "✓"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">

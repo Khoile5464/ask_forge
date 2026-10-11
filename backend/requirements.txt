@@ -15,7 +15,6 @@ pydantic-settings==2.5.0
 
 # Vector Store & Embeddings
 chromadb==0.5.0
-sentence-transformers==3.0.1
 
 # LangChain Core
 langchain==0.3.0
@@ -25,17 +24,13 @@ langchain-text-splitters==0.3.0
 
 # LangChain Integrations
 langchain-google-genai==2.0.0
-langchain-huggingface==0.1.0
 langchain-chroma==0.1.4
 
 # Google Generative AI
 google-genai==0.8.0
 
-# Hugging Face
-transformers==4.44.0
-torch
-torchvision
-accelerate==0.33.0
+# Ollama (embedding, question generation, optional chat)
+ollama==0.4.7
 
 # PDF Processing
 pypdf==4.3.0
@@ -47,4 +42,3 @@ rq==1.16.2
 # Logging & Utils
 python-dotenv==1.0.1
 
-# Optional: CUDA support (uncomment if using GPU)

@@ -1,4 +1,5 @@
 import { API_BASE } from "@/lib/config"
+import type { ChatProvider } from "@/lib/store"
 
 // ============================================================
 // Types
@@ -65,7 +66,12 @@ export interface StreamCallbacks {
   setFollowupQuestions?: (questions: string[]) => void
 }
 
-export async function chatStreamAPI(query: string, indexName: string, callbacks: StreamCallbacks): Promise<void> {
+export async function chatStreamAPI(
+  query: string,
+  indexName: string,
+  provider: ChatProvider,
+  callbacks: StreamCallbacks,
+): Promise<void> {
   const url = new URL(`${API_BASE}/api/chat/stream`)
 
   console.log("🚀 Starting stream request to:", url.toString())
@@ -74,7 +80,7 @@ export async function chatStreamAPI(query: string, indexName: string, callbacks:
     const response = await fetch(url.toString(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query_text: query, index_name: indexName }),
+      body: JSON.stringify({ query_text: query, index_name: indexName, provider }),
     })
 
     console.log("📡 Response status:", response.status)

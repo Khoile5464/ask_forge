@@ -51,7 +51,7 @@ class LLMRouter:
 
 def prefer_local_for_qg(context: dict) -> Optional[str]:
     """
-    ✅ Prefer HF local model for Question Generation (reduce API costs)
+    ✅ Prefer local Ollama model for Question Generation (reduce API costs)
 
     Matches task name from worker.py
     """
@@ -61,8 +61,10 @@ def prefer_local_for_qg(context: dict) -> Optional[str]:
     return None
 
 
-def prefer_gemini_for_chat(context: dict) -> Optional[str]:
-    """Gemini for chat (low latency, high quality)"""
+def route_chat_by_provider(context: dict) -> Optional[str]:
+    """Chat: người dùng chọn provider ("gemini" | "ollama"), mặc định Gemini"""
     if context.get("task") == "chat":
+        if context.get("provider") == "ollama":
+            return "ollama_service"
         return "gemini_service"
     return None

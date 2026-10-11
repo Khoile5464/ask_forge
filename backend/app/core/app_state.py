@@ -16,10 +16,11 @@ from ask_forge.backend.app.services.chat_history.chat_history import InMemoryHis
 from ask_forge.backend.app.services.llm.adapters.question_generator import QuestionGeneratorAdapter
 
 from ask_forge.backend.app.services.llm.registry import get_registry, LLMRegistry
-from ask_forge.backend.app.services.llm.router import LLMRouter, prefer_local_for_qg, prefer_gemini_for_chat
+from ask_forge.backend.app.services.llm.router import LLMRouter, prefer_local_for_qg, route_chat_by_provider
 
 from ask_forge.backend.app.services.llm.adapters.gemini import GeminiAdapter
-from ask_forge.backend.app.services.llm.adapters.huggingface import HuggingFaceAdapter
+from ask_forge.backend.app.services.llm.adapters.ollama import OllamaAdapter
+from ollama import AsyncClient as OllamaClient
 
 from pathlib import Path
 
@@ -121,31 +122,39 @@ class AppState:
             # Gemini
             self.llm_registry.register("gemini_service", GeminiAdapter())
 
-            # Question Generator Register
-            if settings.HF_PRELOAD_AT_STARTUP:
-                question_generator_adapter = QuestionGeneratorAdapter(
-                    settings.HF_QUESTION_GENERATOR_CKPT
-                )
-
-                await question_generator_adapter._ensure_loaded() # Lệnh kích hoạt load Adapter/Model
-                self.llm_registry.register(
-                    "question_generator_service", question_generator_adapter
-                )
-            else:
-                # Lazy: register nhưng chưa load
-                self.llm_registry.register(
-                    "question_generator_service",
-                    QuestionGeneratorAdapter(settings.HF_QUESTION_GENERATOR_CKPT)
-                )
+            # Ollama: chat (tuỳ chọn của người dùng) + Question Generator
+            self.llm_registry.register("ollama_service", OllamaAdapter(settings.OLLAMA_CHAT_MODEL))
+            self.llm_registry.register(
+                "question_generator_service",
+                QuestionGeneratorAdapter(settings.OLLAMA_QG_MODEL)
+            )
+            await self._check_ollama_models()
 
             # Setup router policies
-            self.llm_router.add_policy(prefer_gemini_for_chat)
+            self.llm_router.add_policy(route_chat_by_provider)
             self.llm_router.add_policy(prefer_local_for_qg)
 
             logger.info(f"✅ LLM providers ready: {self.llm_registry.list_providers()}")
 
             self._initialized = True
             logger.info("✅ All application resources started successfully")
+
+    async def _check_ollama_models(self):
+        """Chỉ cảnh báo (không crash) nếu Ollama chưa chạy hoặc thiếu model"""
+        required = {settings.OLLAMA_EMBED_MODEL, settings.OLLAMA_QG_MODEL, settings.OLLAMA_CHAT_MODEL}
+        try:
+            listed = await OllamaClient(host=settings.OLLAMA_BASE_URL).list()
+        except Exception as e:
+            logger.warning(f"⚠️ Cannot reach Ollama at {settings.OLLAMA_BASE_URL}: {e}")
+            return
+
+        available = {m["model"] for m in listed["models"]}
+        available |= {name.removesuffix(":latest") for name in available}
+        missing = sorted(required - available)
+        if missing:
+            logger.warning(f"⚠️ Ollama models not pulled yet: {missing} → run `ollama pull <model>`")
+        else:
+            logger.info(f"✅ Ollama models ready: {sorted(required)}")
 
     async def shutdown(self):
         """

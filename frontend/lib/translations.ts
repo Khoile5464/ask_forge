@@ -6,6 +6,7 @@ export const translations = {
     darkMode: "Dark Mode",
     lightMode: "Light Mode",
     language: "Language",
+    chatModel: "Chat model",
 
     // Index Panel
     indexName: "Index Name",
@@ -38,6 +39,7 @@ export const translations = {
     darkMode: "Chế độ tối",
     lightMode: "Chế độ sáng",
     language: "Ngôn ngữ",
+    chatModel: "Mô hình trả lời",
 
     // Index Panel
     indexName: "Tên chỉ mục",
